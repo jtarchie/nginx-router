@@ -1,0 +1,33 @@
+---
+name: router
+
+templates:
+  ctl.sh: bin/ctl
+  router.json: config/router.json
+
+packages:
+- rtr
+- ruby
+- router
+
+properties:
+  routing_api.uri:
+    description: "URL where the routing API can be reached internally"
+    default: http://routing-api.service.cf.internal
+  routing_api.port:
+    description: "Port on which Routing API is running."
+    default: 3000
+  routing_api.auth_disabled:
+    description: "When false, Routing API requires OAuth tokens for authentication."
+    default: false
+  routing_api.enabled:
+    description: "When enabled, GoRouter will fetch HTTP routes from the Routing API in addition to routes obtained via NATS."
+    default: false
+
+  uaa.clients.gorouter.secret:
+    description: "Password for UAA client for the gorouter."
+  uaa.token_endpoint:
+    description: "UAA token endpoint host name. Do not include a scheme in this value; TCP Router will always use TLS to connect to UAA."
+    default: uaa.service.cf.internal
+  uaa.ssl.port:
+    description: "Secure Port on which UAA is running."

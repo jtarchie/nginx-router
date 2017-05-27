@@ -1,0 +1,66 @@
+name: nginx-router
+
+stemcells:
+- alias: default
+  os: ubuntu-trusty
+  version: latest
+
+releases:
+- name: nginx-router
+  version: latest
+
+
+instance_groups:
+- name: nginx-router
+  azs: [ z1 ]
+  instances: 1
+  vm_type: default
+  stemcell: default
+  networks:
+  - name: default
+  jobs:
+  - name: nginx
+    properties:
+      router:
+        ssl_cert: "((router_ssl.certificate))"
+        ssl_key: "((router_ssl.private_key))"
+        enable_ssl: true
+        status:
+          password: "((router_status_password))"
+          user: router-status
+  - name: router
+    properties:
+      routing_api:
+        uri: ((routing_api_uri))
+        port: ((routing_api_port))
+      uaa:
+        clients:
+          gorouter:
+            secret: ((gorouter_secret))
+        token_endpoint: ((uaa_endpoint))
+        ssl:
+          port: 443
+  update:
+    serial: false
+    max_in_flight: 1
+
+update:
+  canaries: 10
+  max_in_flight: 10
+  canary_watch_time: 1000-60000
+  update_watch_time: 1000-60000
+  serial: false
+
+variables:
+- name: router_status_password
+  type: password
+- name: router_ca
+  type: certificate
+  options:
+    is_ca: true
+    common_name: routerCA
+- name: router_ssl
+  type: certificate
+  options:
+    ca: router_ca
+    common_name: routerSSL

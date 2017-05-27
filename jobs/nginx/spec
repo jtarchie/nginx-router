@@ -1,0 +1,45 @@
+---
+name: nginx
+
+templates:
+  config/auth_basic: config/auth_basic
+  config/cert: config/cert
+  config/key: config/key
+  ctl.sh: bin/ctl
+  dns_health_check: bin/dns_health_check
+  nginx.conf: config/nginx.conf
+
+packages:
+- nginx
+
+properties:
+  router.port:
+    description: "Listening Port for Router."
+    default: 80
+  router.number_of_cpus:
+    description: "Number of CPUs to utilize, the default (-1) will equal the number of available CPUs"
+    default: -1
+
+  router.status.port:
+    description: "Port for the /health, /varz, and /routes endpoints."
+    default: 8080
+  router.status.user:
+    description: "Username for HTTP basic auth to the /varz and /routes endpoints."
+    default: router-status
+  router.status.password:
+    description: "Password for HTTP basic auth to the /varz and /routes endpoints."
+
+  router.enable_ssl:
+    description: "When enabled, Gorouter will listen on port 443 and terminate TLS for requests received on this port."
+    default: false
+  router.cipher_suites:
+    description: |
+      An ordered list of supported standard SSL cipher suites containing OpenSSL tls constants (`openssl ciphers`)
+      separated by colons. The cipher suite will be chosen according to this order during SSL handshake
+    default: "DHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384"
+  router.ssl_cert:
+    description: "The public ssl cert for ssl termination"
+    default: ""
+  router.ssl_key:
+    description: "The private ssl key for ssl termination"
+    default: ""

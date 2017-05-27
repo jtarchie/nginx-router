@@ -1,0 +1,12 @@
+nginx-1.13.0.tar.gz:
+  size: 982592
+  sha: 50cbc635b72645aa0317e3b5aa256626d4b9e23a
+pcre-8.40.tar.gz:
+  size: 2065161
+  sha: 10384eb3d411794cc15f55b9d837d3f69e35391e
+rtr-linux-amd64.tgz:
+  size: 2638231
+  sha: a702c7fc3316881387b2d333f7a4b0d01b6552c2
+ruby-2.4.1.tar.gz:
+  size: 14174752
+  sha: 47909a0f77ea900573f027d27746960ad6d07d15

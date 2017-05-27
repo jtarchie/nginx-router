@@ -1,0 +1,9 @@
+#!/bin/bash
+set -eux
+
+tar xzf rtr-linux-amd64.tgz
+
+BIN_DIR=${BOSH_INSTALL_TARGET}/bin
+mkdir -p ${BIN_DIR}
+
+cp rtr-linux-amd64 ${BIN_DIR}/rtr

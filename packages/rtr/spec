@@ -1,0 +1,5 @@
+---
+name: rtr
+
+files:
+- rtr-linux-amd64.tgz

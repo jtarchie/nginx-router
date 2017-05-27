@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -eux
+
+cp -a router/* ${BOSH_INSTALL_TARGET}

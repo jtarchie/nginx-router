@@ -1,0 +1,1 @@
+<%= p("router.status.user") %>:<%= `openssl passwd -crypt #{ p("router.status.password") }`.chomp %>

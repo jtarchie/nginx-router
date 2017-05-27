@@ -1,0 +1,8 @@
+---
+name: nginx
+
+dependencies: []
+
+files:
+- nginx-1.13.0.tar.gz
+- pcre-8.40.tar.gz

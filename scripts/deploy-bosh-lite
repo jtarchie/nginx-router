@@ -1,0 +1,9 @@
+#!/bin/bash
+
+set -eux
+
+target=${TARGET:-lite}
+
+bosh create-release --force
+bosh -n -e "$target" upload-release --rebase
+bosh -n -e "$target" -d nginx-router deploy templates/example.yml
