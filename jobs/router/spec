@@ -3,7 +3,16 @@ name: router
 
 templates:
   ctl.sh: bin/ctl
-  router.json: config/router.json
+  router.json.erb: config/router.json
+
+provides:
+- name: nginx-router
+  type: http-router
+
+consumes:
+- name: nats
+  type: nats
+  optional: true
 
 packages:
 - rtr
@@ -31,3 +40,18 @@ properties:
     default: uaa.service.cf.internal
   uaa.ssl.port:
     description: "Secure Port on which UAA is running."
+
+  nats.user:
+    description: User name for NATS authentication
+    example: nats
+  nats.password:
+    description: Password for NATS authentication
+    example: natSpa55w0rd
+  nats.port:
+    description: TCP port of NATS servers
+    example: 4222
+  nats.machines:
+    description: IPs of each NATS cluster member
+    example: |
+      - 192.168.50.123
+      - 192.168.52.123

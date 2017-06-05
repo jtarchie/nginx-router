@@ -8,7 +8,8 @@ stemcells:
 releases:
 - name: nginx-router
   version: latest
-
+- name: consul
+  version: latest
 
 instance_groups:
 - name: nginx-router
@@ -19,7 +20,15 @@ instance_groups:
   networks:
   - name: default
   jobs:
+  - name: consul_agent
+    release: consul
+    consumes:
+      consul: nil
+      consul_common: {from: consul_common_link, deployment: cf}
+      consul_server: {from: consul_server_link, deployment: cf}
+      consul_client: {from: consul_client_link, deployment: cf}
   - name: nginx
+    release: nginx-router
     properties:
       router:
         ssl_cert: "((router_ssl.certificate))"
@@ -29,17 +38,18 @@ instance_groups:
           password: "((router_status_password))"
           user: router-status
   - name: router
+    release: nginx-router
+    consumes:
+      nats: {from: nats, deployment: cf}
     properties:
-      routing_api:
-        uri: ((routing_api_uri))
-        port: ((routing_api_port))
       uaa:
         clients:
           gorouter:
-            secret: ((gorouter_secret))
-        token_endpoint: ((uaa_endpoint))
+            secret: "((uaa_clients_gorouter_secret))"
         ssl:
-          port: 443
+          port: 8443
+      nats:
+        password: "((nats_password))"
   update:
     serial: false
     max_in_flight: 1
@@ -52,6 +62,10 @@ update:
   serial: false
 
 variables:
+- name: uaa_clients_gorouter_secret
+  type: password
+- name: nats_password
+  type: password
 - name: router_status_password
   type: password
 - name: router_ca

@@ -1,3 +1,9 @@
+bundler-1.15.1.gem:
+  size: 338432
+  sha: d3e95482b0ba4370cbd27cc455f9b364acfe81ff
+nats-pure-0.2.4.gem:
+  size: 14336
+  sha: 8ba4d5df269ae6316457b498ae402e94c5b56edd
 nginx-1.13.0.tar.gz:
   size: 982592
   sha: 50cbc635b72645aa0317e3b5aa256626d4b9e23a
@@ -10,3 +16,6 @@ rtr-linux-amd64.tgz:
 ruby-2.4.1.tar.gz:
   size: 14174752
   sha: 47909a0f77ea900573f027d27746960ad6d07d15
+rubygems-2.6.12.tgz:
+  size: 767895
+  sha: 5ffe5a8c3fdbefdc8b5b6bcc67d059fe9b76b954

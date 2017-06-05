@@ -4,4 +4,7 @@ name: ruby
 dependencies: []
 
 files:
+- bundler-1.15.1.gem
+- nats-pure-0.2.4.gem
 - ruby-2.4.1.tar.gz
+- rubygems-2.6.12.tgz
