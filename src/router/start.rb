@@ -4,24 +4,40 @@ require 'digest/md5'
 require 'erb'
 require 'json'
 require 'nats/io/client'
+require 'resolv-replace'
+require 'set'
 require 'uri'
 
 Endpoint = Struct.new(:host, :port, :uri)
-HTTPRoute = Struct.new(:uri, :results) do
+Location = Struct.new(:path, :endpoints) do
   def upstream_name
-    @upstream_name ||= "upstream_#{Digest::MD5.hexdigest uri}"
+    @upstream_name ||= "upstream_#{Digest::MD5.hexdigest self.inspect}"
   end
 
   def upstreams
     @upstream ||= begin
-                    results.map do |result|
-                      "#{result.host}:#{result.port}"
+                    endpoints.map do |endpoint|
+                      "#{endpoint.host}:#{endpoint.port}"
                     end
                   end
   end
 
   def path
-    @path ||= URI.parse(uri).path
+    return '/' if self['path'] == ''
+    self['path']
+  end
+end
+HTTPRoute = Struct.new(:uri, :endpoints) do
+  def locations
+    @locations ||= endpoints.group_by do |endpoint|
+      URI.parse("http://#{endpoint.uri}").path
+    end.map do |path, endpoints|
+      Location.new(path, endpoints)
+    end
+  end
+
+  def host
+    @host ||= URI.parse(uri).host
   end
 end
 
@@ -34,11 +50,12 @@ def nats_client
                      nats = NATS::IO::Client.new
                      nats.connect(
                        servers: config.dig('nats', 'machines').map do |ip|
-                         "#{config.dig('nats', 'user')}:#{config.dif('nats', 'password')}@#{ip}:#{config.dig('nats', 'port')}"
+                         "nats://#{config.dig('nats', 'user')}:#{config.dig('nats', 'password')}@#{ip}:#{config.dig('nats', 'port')}"
                        end,
                        reconnect_time_wait: 0.5,
                        max_reconnect_attempts: 2
                      )
+                     nats
                    end
 end
 
@@ -48,7 +65,7 @@ end
 
 def endpoints_from_payload(reply)
   payload = JSON.parse(reply)
-  payload['uris'].maps do |uri|
+  payload['uris'].map do |uri|
     Endpoint.new(
       payload['host'],
       payload['port'],
@@ -58,54 +75,60 @@ def endpoints_from_payload(reply)
 end
 
 def main
+  puts "emitting confg for routes: #{endpoints.count}"
   File.write(
     '/var/vcap/run/nginx/ext/upstreams.conf',
     upstreams_template.result(binding)
   )
   File.write(
-    '/var/vcap/run/nginx/ext/locations.conf',
-    locations_template.result(binding)
+    '/var/vcap/run/nginx/ext/http_servers.conf',
+    http_servers_template.result(binding)
   )
   system('kill -s HUP $(cat /var/vcap/run/nginx/nginx.pid)')
 end
 
 def http_routes
-  # output = `rtr list \
-  #   --api #{config.dig('routing_api', 'uri')}:#{config.dig('routing_api', 'port')} \
-  #   --client-id gorouter \
-  #   --client-secret #{config.dig('uaa', 'clients', 'gorouter', 'secret')} \
-  #   --oauth-url #{config.dig('uaa', 'token_endpoint')}:#{config.dig('uaa','ssl','port')}`.chomp
-
-  # results = JSON.parse(output.split("\n").last)
-  # results_by_route = results.group_by { |r| r['route'] }
-  # results_by_route.map do |uri, results|
-  #   HTTPRoute.new("http://#{uri}", results)
-  # end
   results_by_route = endpoints.group_by { |e| e.uri }
   results_by_route.map do |uri, results|
     HTTPRoute.new("http://#{uri}", results)
   end
 end
 
-upstreams_template = ERB.new(<<-EOF)
+def upstreams_template
+  @upstreams_template ||= ERB.new(<<-EOF, nil, '<>')
 <% http_routes.each do |route| %>
-upstream <%= route.upstream_name %> {
-  <% route.upstreams.each do |upstream| %>
+# debug <%= route.inspect %>
+<% route.locations.each do |location| %>
+# debug: <%= location.inspect %>
+upstream <%= location.upstream_name %> {
+  <% location.upstreams.each do |upstream| %>
   server <%= upstream.to_s %>;
   <% end %>
 }
 <% end %>
+<% end %>
 EOF
+end
 
-locations_template = ERB.new(<<-EOF)
+def http_servers_template
+  @http_servers_template ||= ERB.new(<<-EOF, nil, '<>')
 <% http_routes.each do |route| %>
-location <%= route.path %> {
-  proxy_pass http://<%= route.upstream_name %>;
+server {
+  include /var/vcap/jobs/nginx/config/http.conf;
+  server_name <%= route.host %>;
+
+  <% route.locations.each do |location| %>
+  location <%= location.path %> {
+    proxy_pass http://<%= location.upstream_name %>;
+  }
+  <% end %>
 }
 <% end %>
 EOF
+end
 
 def start_message
+  puts 'sending router.start'
   nats_client.publish('router.start', {
     id: config.dig('spec', 'id'),
     hosts: [ config.dig('spec', 'address') ],
@@ -115,26 +138,24 @@ def start_message
 end
 
 nats_client.subscribe('router.greet') do
+  puts 'accepting router.greet'
   start_message
 end
 
 nats_client.subscribe('router.*') do |msg, reply, subject|
-  case msg
+  case subject
   when 'router.register'
-    endpoints.add(endpoints_from_payload(reply))
+    endpoints.merge(endpoints_from_payload(msg))
   when 'router.unregister'
-    endpoints.delete(endpoints_from_payload(reply))
+    endpoints.subtract(endpoints_from_payload(msg))
   end
 end
 
 start_message
 if __FILE__ == $0
+  puts 'Starting main loop'
   loop do
     main
     sleep 10
   end
-end
-
-loop do
-  sleep 10
 end

@@ -24,7 +24,9 @@ case $1 in
         echo $$ > $pid_file
         export PATH=$job_dir/packages/ruby/bin:$job_dir/packages/rtr/bin:$PATH
 
-        exec chpst -u vcap:vcap ruby "$job_dir/packages/router/start.rb"
+        exec chpst -u vcap:vcap ruby "$job_dir/packages/router/start.rb" \
+            >> "$log_dir/router.log" \
+            2>> "$log_dir/router.log"
         ;;
     stop)
         kill "$(cat "$pid_file")"

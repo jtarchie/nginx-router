@@ -18,9 +18,10 @@ mkdir -p \
     $run_dir/ext \
     $run_dir/logs
 
-cp $cfg_dir/nginx.conf $run_dir
-touch "# this is an auto generated do not edit" > $run_dir/ext/upstreams.conf
-touch "# this is an auto generated do not edit" > $run_dir/ext/locations.conf
+cp $cfg_dir/*.conf $run_dir
+touch "# this is an auto generated, do not edit" > $run_dir/ext/upstreams.conf
+touch "# this is an auto generated, do not edit" > $run_dir/ext/ssl_servers.conf
+touch "# this is an auto generated, do not edit" > $run_dir/ext/http_servers.conf
 
 chown -R vcap:vcap $log_dir
 chown -R vcap:vcap $run_dir
@@ -32,7 +33,9 @@ case $1 in
         exec chpst -u vcap:vcap "$job_dir/packages/nginx/sbin/nginx" \
             -c "$run_dir/nginx.conf" \
             -g "pid $pid_file;" \
-            -p $run_dir
+            -p $run_dir \
+            >> "$log_dir/nginx.log" \
+            2>> "$log_dir/nginx.log"
         ;;
     stop)
         kill "$(cat "$pid_file")"

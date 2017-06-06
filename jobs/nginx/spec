@@ -8,6 +8,8 @@ templates:
   ctl.sh: bin/ctl
   dns_health_check: bin/dns_health_check
   nginx.conf: config/nginx.conf
+  ssl.conf: config/ssl.conf
+  http.conf: config/http.conf
 
 packages:
 - nginx
